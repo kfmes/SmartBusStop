@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Smart Bus Stop</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_beacon_list">BeaconListActivity</string>
+    <string name="title_activity_bus_stop_info">BusStopInfoActivity</string>
+    <string name="title_activity_stop_list">주변 버스 정류장 목록</string>
+    <string name="title_activity_stop_info">버스 도착 정보</string>
+
+    <string name="title_activity_intro">IntroActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+</resources>
