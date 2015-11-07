@@ -47,6 +47,12 @@
             android:label="@string/title_activity_intro"
             android:screenOrientation="portrait" >
         </activity>
+
+        <meta-data
+
+            android:name="com.google.android.maps.v2.API_KEY"
+            android:value="636199880423-uc7uvng8fqfrboicj11t5popl30pjhh7.apps.googleusercontent.com" />
+
     </application>
 
 </manifest>

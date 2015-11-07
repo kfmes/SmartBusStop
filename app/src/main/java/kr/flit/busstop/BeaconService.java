@@ -7,30 +7,28 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
+
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,7 +38,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 
 public class BeaconService extends Service
     implements BeaconConsumer, RangeNotifier
@@ -99,7 +96,6 @@ public class BeaconService extends Service
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
 //        Log.d(TAG, "onBind " + intent.toString());
 //        return null;
@@ -160,70 +156,119 @@ public class BeaconService extends Service
             busStopId += beacon.getId3().toInt();
             final String sBusStopId = String.valueOf(busStopId);
 
-            if(prefsStation.contains(sBusStopId)==false && reqProcessses.contains(busStopId)==false){
+            if(prefsStation.contains(sBusStopId)==false && reqProcessses.contains(busStopId)==false) {
 //                stationNames.put(busStopId, "");
                 final int fBusStopId = busStopId;
-                reqProcessses.add(busStopId);
+                String url = "http://m.bus.go.kr/mBus/bus/getStationByUid.bms";
+                String search = String.valueOf(fBusStopId);
+                String arsId = search.replaceAll("-", "");
 
-                new AsyncTask<Void, Void, JSONObject>(){
+                OkHttpClient client = new OkHttpClient();
+
+                RequestBody body = new FormEncodingBuilder()
+                        .add("arsId", arsId)
+                        .build();
+
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(body)
+                        .build();
+
+                client.newCall(request).enqueue(new Callback() {
                     @Override
-                    protected JSONObject doInBackground(Void... params) {
-                        try {
-                            HttpClient client = new DefaultHttpClient();
-                            String uri = "http://m.bus.go.kr/mBus/bus/getStationByUid.bms";
-                            String search = String.valueOf(fBusStopId);
-                            HttpPost request = new HttpPost(uri);
-                            String arsId = search.replaceAll("-","");
-                            List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-                            nvps.add(new BasicNameValuePair("arsId", arsId));
-
-                            request.setEntity(
-                                    new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-
-                            HttpResponse response = client.execute(request);
-                            String res = EntityUtils.toString(response.getEntity());
-                            JSONObject json = new JSONObject(res);
-                            return json;
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
-                        return null;
+                    public void onFailure(Request request, IOException e) {
+                        //TODO: failure handling
                     }
 
                     @Override
-                    protected void onPostExecute(JSONObject jsonObject) {
-                        super.onPostExecute(jsonObject);
-                        JSONObject response = jsonObject;
-                        boolean isError = true;
-                        if(response!=null ){
-                            JSONArray resultList = response.optJSONArray("resultList");
-                            if(resultList!=null && resultList.length()>0){
-                                isError = false;
-                                JSONObject resultItem = resultList.optJSONObject(0);
-                                String stationName = resultItem.optString("stNm","");
+                    public void onResponse(Response response) throws IOException {
+                        boolean isError = response.isSuccessful();
+
+                        if (response.isSuccessful()) {
+                            String res = response.body().string();
+                            try {
+                                JSONObject json = new JSONObject(res);
+
+                                JSONArray resultList = json.optJSONArray("resultList");
+                                if (resultList != null && resultList.length() > 0) {
+                                    isError = false;
+                                    JSONObject resultItem = resultList.optJSONObject(0);
+                                    String stationName = resultItem.optString("stNm", "");
 //                                stationNames.put(fBusStopId, stationName);
-                                prefsStation.edit().putString(sBusStopId, stationName).apply();
-                                JSONObject stopObj =  stationMap.get(fBusStopId);
-                                if(stopObj!=null)
-                                    try {
-                                        stopObj.put("result", resultList.toString());
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                //gpsY
-                                //gpsX
+                                    prefsStation.edit().putString(sBusStopId, stationName).apply();
+                                    JSONObject stopObj = stationMap.get(fBusStopId);
+                                    if (stopObj != null)
+                                        try {
+                                            stopObj.put("result", resultList.toString());
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                    //gpsY
+                                    //gpsX
+                                }
+                            } catch (JSONException e) {
+                                isError = true;
+                                e.printStackTrace();
+                                ;
                             }
                         }
 
-//                        if(isError) {
-//                            stationNames.put(fBusStopId, "");
+                        if (isError) {
+                            //TODO: error handling
+                        }
+                    } // end of onResponse
+                }); // end of client.callback
+
+            } // end of if
+
+//                reqProcessses.add(busStopId);
+//
+//                new AsyncTask<Void, Void, JSONObject>(){
+//                    @Override
+//                    protected JSONObject doInBackground(Void... params) {
+//                        try {
+//
+//
+//                                    reqProcessses.remove(fBusStopId);
+//                                }
+//                            });
+//                        return null;
+//                    }
+//
+//                    @Override
+//                    protected void onPostExecute(JSONObject jsonObject) {
+//                        super.onPostExecute(jsonObject);
+//                        JSONObject response = jsonObject;
+//                        boolean isError = true;
+//                        if(response!=null ){
+//                            JSONArray resultList = response.optJSONArray("resultList");
+//                            if(resultList!=null && resultList.length()>0){
+//                                isError = false;
+//                                JSONObject resultItem = resultList.optJSONObject(0);
+//                                String stationName = resultItem.optString("stNm","");
+////                                stationNames.put(fBusStopId, stationName);
+//                                prefsStation.edit().putString(sBusStopId, stationName).apply();
+//                                JSONObject stopObj =  stationMap.get(fBusStopId);
+//                                if(stopObj!=null)
+//                                    try {
+//                                        stopObj.put("result", resultList.toString());
+//                                    } catch (JSONException e) {
+//                                        e.printStackTrace();
+//                                    }
+//                                //gpsY
+//                                //gpsX
+//                            }
 //                        }
 //
-                        reqProcessses.remove(fBusStopId);
-                    }
-                }.execute();
-
-            }
+////                        if(isError) {
+////                            stationNames.put(fBusStopId, "");
+////                        }
+////
+//                        reqProcessses.remove(fBusStopId);
+//                    }
+//                }.execute();
+//
+//            }
 
             // 14-013 , 36 bd , 54 189
             // 14-014 , 36 be , 54 190

@@ -11,8 +11,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -21,15 +19,12 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
+import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,7 +32,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 import kr.flit.busstop.adapter.JSONArrayAdapterItem;
 import kr.flit.busstop.adapter.ViewProjector;
@@ -101,11 +95,10 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
             viewSplash.setVisibility(View.GONE);
 
 
-
 //        TextView tv = (TextView) findViewById(R.id.CustomFontText);
 //        tv.setTypeface(tf);
         fontOldBaths = Typeface.createFromAsset(getAssets(),
-                "old_baths.otf");
+                "BMHANNA_11yrs_otf.otf");
 
 
 
@@ -285,24 +278,26 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
     }
 
     private void showSplash() {
-//        Toast.makeText(this, "showSplash", Toast.LENGTH_LONG).show();
         viewSplash.setVisibility(View.VISIBLE);
         viewSplash.postDelayed(new Runnable() {
             @Override
             public void run() {
-                Animation anim = AnimationUtils.loadAnimation(context, android.R.anim.fade_out);
-                anim.setDuration(800);
-                anim.setAnimationListener(new Animation.AnimationListener() {
-                    public void onAnimationStart(Animation animation) {}
-                    public void onAnimationRepeat(Animation animation) {}
-                    public void onAnimationEnd(Animation animation) {
-                        viewSplash.setVisibility(View.GONE);
-                    }
-                });
-                viewSplash.setAnimation(anim);
-                anim.start();
+                Log.d(TAG, "viewSplash.postDelayed");
+//                Animation anim = AnimationUtils.loadAnimation(context, android.R.anim.fade_out);
+//                anim.setDuration(800);
+//                anim.setAnimationListener(new Animation.AnimationListener() {
+//                    public void onAnimationStart(Animation animation) {}
+//                    public void onAnimationRepeat(Animation animation) {}
+//                    public void onAnimationEnd(Animation animation) {
+//                        viewSplash.setVisibility(View.GONE);
+//                        Log.d(TAG, "viewSplash.gone");
+//                    }
+//                });
+//                viewSplash.setAnimation(anim);
+//                anim.start();
+                viewSplash.setVisibility(View.GONE);
             }
-        }, 1200L);
+        }, 2200L);
 
 
     }
@@ -392,22 +387,27 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                 @Override
                 protected JSONObject doInBackground(Void... params) {
                     try {
-                        HttpClient client = new DefaultHttpClient();
-                        String uri = "http://m.bus.go.kr/mBus/bus/getStationByUid.bms";
+                        String url = "http://m.bus.go.kr/mBus/bus/getStationByUid.bms";
                         String search = String.valueOf(busStopId);
-                        HttpPost request = new HttpPost(uri);
                         String arsId = search.replaceAll("-", "");
-                        List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-                        nvps.add(new BasicNameValuePair("arsId", arsId));
 
-                        request.setEntity(
-                                new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+                        OkHttpClient client = new OkHttpClient();
 
-                        HttpResponse response = client.execute(request);
-                        String res = EntityUtils.toString(response.getEntity());
-                        JSONObject json = new JSONObject(res);
-//                            Log.d(TAG, json.toString());
-                        return json;
+                        RequestBody body = new FormEncodingBuilder()
+                                .add("arsId", arsId)
+                                .build();
+
+                        Request request = new Request.Builder()
+                                .url(url)
+                                .post(body)
+                                .build();
+
+                        Response response = client.newCall(request).execute();
+                        if(response.isSuccessful()){
+                            JSONObject json = new JSONObject(response.body().string());
+                            return json;
+                        }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
