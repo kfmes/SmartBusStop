@@ -1,5 +1,23 @@
 apply plugin: 'com.android.application'
 
+ext.signing = [
+        storeFilePath: 'path/to/keystore',
+        storePassword: 'keystore password',
+        keyAlias     : 'key alias',
+        keyPassword  : 'key password',
+]
+ext.releasePath = "${rootDir}/release/";// + getDate();
+
+if (file('signing.gradle').exists()) {
+    apply from: 'signing.gradle'
+}
+
+def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('yyyyMMdd_HHmm')
+    return formattedDate
+}
+
 android {
     compileSdkVersion 23
     buildToolsVersion '23.0.1'
@@ -11,16 +29,54 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    signingConfigs {
+        release {
+            storeFile file(project.signing.storeFilePath)
+            storePassword project.signing.storePassword
+            keyAlias project.signing.keyAlias
+            keyPassword project.signing.keyPassword
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
         debug {
             zipAlignEnabled true
+            if (file('signing.gradle').exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
+
+
+task releaseCopyTask(type: Copy) {
+    def destination = project.releasePath + "/" + getDate();
+
+    from("${buildDir}") {
+        include "**/apk/*-release.apk"
+    }
+    into destination
+
+    println "build dir is ${buildDir}";
+    println "copy to ${destination}";
+    eachFile { file ->
+        file.path = file.name // so we have a "flat" copy
+        file.name = "release_bus_${getDate()}.apk";
+    }
+    includeEmptyDirs = false
+}
+
+task releaseAPK(dependsOn: ':app:assembleRelease') << {
+    println "Release APK"
+}
+
+tasks['releaseAPK'].finalizedBy = ['releaseCopyTask'];
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
