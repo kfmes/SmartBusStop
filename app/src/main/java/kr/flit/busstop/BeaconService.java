@@ -92,6 +92,10 @@ public class BeaconService extends Service
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
+        NotificationManager notificationManager =
+                (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(NOTIFY_BEACON_SERVICE);
+
         super.onDestroy();
         manager.unbind(this);
         manager.setBackgroundMode(true);
@@ -117,6 +121,10 @@ public class BeaconService extends Service
 //        logToDisplay("---------");
 
         list.clear();
+        if(beacons.size()==0){
+            stopSelf();
+            return;
+        }
 
         Log.i(TAG, "didRangeBeaconsInRegion");
         StringBuilder notifyMsg = new StringBuilder();

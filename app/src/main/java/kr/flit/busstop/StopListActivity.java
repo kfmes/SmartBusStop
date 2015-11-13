@@ -408,8 +408,13 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
                         Response response = client.newCall(request).execute();
                         if(response.isSuccessful()){
-                            JSONObject json = new JSONObject(response.body().string());
-                            return json;
+                            try {
+                                JSONObject json = new JSONObject(response.body().string());
+                                return json;
+                            }catch (JSONException e){
+                                System.out.println( response.body().toString());
+                                e.printStackTrace();
+                            }
                         }
 
                     } catch (Exception e) {
