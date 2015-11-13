@@ -7,6 +7,8 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.TaskStackBuilder;
@@ -321,12 +323,16 @@ public class BeaconService extends Service
                 );
 
 
+        Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
         Notification notification = new Notification.BigTextStyle(
                 new Notification.Builder(this)
                         .setContentTitle("버스정류장이 근처에 있습니다")
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentText(msg.toString())
+                        .setSmallIcon(R.drawable.ic_stat_icon)
+                        .setLargeIcon(largeIcon)
                         .setContentIntent(resultPendingIntent)
                 )
+
                 .bigText(msg.toString())
                 .build();
 
