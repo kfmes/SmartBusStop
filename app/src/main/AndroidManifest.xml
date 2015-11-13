@@ -28,6 +28,7 @@
 
         <!-- android:label="@string/title_activity_stop_list" -->
         <activity
+            android:theme="@style/AppTheme.NoActionBar"
             android:name=".StopListActivity"
             android:label="Smart Bus Stop"
             android:launchMode="singleTop"

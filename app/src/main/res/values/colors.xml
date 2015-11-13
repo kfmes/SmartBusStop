@@ -1,5 +1,18 @@
 <resources>
+    <color name="colorPrimary">#00BCD4</color>
+    <color name="colorPrimaryDark">#0097A7</color>
+    <color name="primary_light">#B2EBF2</color>
+    <color name="colorAccent">#448AFF</color>
 
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#727272</color>
+
+    <color name="colorPrimary2">#6dc6c6</color>
+    <!--
+    <color name="colorPrimary">#6dc6c6</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+-->
     <color name="black_overlay">#66000000</color>
 
 </resources>

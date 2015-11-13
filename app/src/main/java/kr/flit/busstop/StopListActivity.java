@@ -4,7 +4,8 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -37,7 +38,7 @@ import kr.flit.busstop.adapter.JSONArrayAdapterItem;
 import kr.flit.busstop.adapter.ViewProjector;
 
 
-public class StopListActivity extends ActionBarActivity
+public class StopListActivity extends AppCompatActivity
 implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 {
 
@@ -72,7 +73,10 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         super.onCreate(savedInstanceState);
         this.context = this;
         instance = this;
+
         setContentView(R.layout.activity_stop_list);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
 
         this.listViewStop = (ListView) findViewById(R.id.listViewStop);
