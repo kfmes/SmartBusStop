@@ -49,6 +49,7 @@ public class BeaconService extends Service
     private HashMap<Integer, JSONObject> stationMap = new HashMap<>();
 
     private HashSet<Integer> reqProcessses = new HashSet<>();
+    private ArrayList<Beacon> list = new ArrayList<>();
 
     interface StopListListener {
         void updateStop(JSONArray array);
@@ -113,9 +114,11 @@ public class BeaconService extends Service
 //        Iterator<Beacon> it = beacons.iterator();
 //        logToDisplay("---------");
 
+        list.clear();
+
         Log.i(TAG, "didRangeBeaconsInRegion");
         StringBuilder notifyMsg = new StringBuilder();
-        ArrayList<Beacon> list = new ArrayList<>();
+
 
         for(Beacon beacon : beacons){
             String id1hex = beacon.getId1().toUuidString().toLowerCase();
@@ -131,9 +134,9 @@ public class BeaconService extends Service
         Collections.sort(list, new Comparator<Beacon>() {
             @Override
             public int compare(Beacon lhs, Beacon rhs) {
-                if(lhs.getDistance()==rhs.getDistance())
+                if (lhs.getDistance() == rhs.getDistance())
                     return 0;
-                return lhs.getDistance() - rhs.getDistance() >0 ? 1 : -1 ;
+                return lhs.getDistance() - rhs.getDistance() > 0 ? 1 : -1;
             }
         });
         SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
@@ -211,6 +214,7 @@ public class BeaconService extends Service
                                 e.printStackTrace();
                                 ;
                             }
+                            sendNotification();
                         }
 
                         if (isError) {
@@ -219,56 +223,9 @@ public class BeaconService extends Service
                     } // end of onResponse
                 }); // end of client.callback
 
-            } // end of if
+            }else{
 
-//                reqProcessses.add(busStopId);
-//
-//                new AsyncTask<Void, Void, JSONObject>(){
-//                    @Override
-//                    protected JSONObject doInBackground(Void... params) {
-//                        try {
-//
-//
-//                                    reqProcessses.remove(fBusStopId);
-//                                }
-//                            });
-//                        return null;
-//                    }
-//
-//                    @Override
-//                    protected void onPostExecute(JSONObject jsonObject) {
-//                        super.onPostExecute(jsonObject);
-//                        JSONObject response = jsonObject;
-//                        boolean isError = true;
-//                        if(response!=null ){
-//                            JSONArray resultList = response.optJSONArray("resultList");
-//                            if(resultList!=null && resultList.length()>0){
-//                                isError = false;
-//                                JSONObject resultItem = resultList.optJSONObject(0);
-//                                String stationName = resultItem.optString("stNm","");
-////                                stationNames.put(fBusStopId, stationName);
-//                                prefsStation.edit().putString(sBusStopId, stationName).apply();
-//                                JSONObject stopObj =  stationMap.get(fBusStopId);
-//                                if(stopObj!=null)
-//                                    try {
-//                                        stopObj.put("result", resultList.toString());
-//                                    } catch (JSONException e) {
-//                                        e.printStackTrace();
-//                                    }
-//                                //gpsY
-//                                //gpsX
-//                            }
-//                        }
-//
-////                        if(isError) {
-////                            stationNames.put(fBusStopId, "");
-////                        }
-////
-//                        reqProcessses.remove(fBusStopId);
-//                    }
-//                }.execute();
-//
-//            }
+            }// end of if
 
             // 14-013 , 36 bd , 54 189
             // 14-014 , 36 be , 54 190
@@ -293,6 +250,24 @@ public class BeaconService extends Service
 //                logToDisplay(msg);
 
             }
+
+
+        } // end of iterator
+
+        sendNotification();
+
+    }
+
+
+    private void sendNotification() {
+        Log.d(TAG, "sendNotification");
+        JSONArray stationList = new JSONArray();
+
+        for(Beacon beacon : list){
+            int busStopId = beacon.getId2().toInt() << 8;// * 0x100;
+            busStopId += beacon.getId3().toInt();
+            final String sBusStopId = String.valueOf(busStopId);
+
             JSONObject stopObj = stationMap.get(busStopId);
             if(stopObj==null){
                 stopObj = new JSONObject();
@@ -301,33 +276,16 @@ public class BeaconService extends Service
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
             }
 
             try {
-
                 stopObj.put("name", prefsStation.getString(sBusStopId, ""));
                 stopObj.put("distance", beacon.getDistance());
-                array.put(stopObj);
+                stationList.put(stopObj);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-        } // end of iterator
-
-        sendNotification(array);
-        if(StopListActivity.instance!=null){
-            StopListActivity.instance.updateStop(array);
         }
-//        if(listener!=null)
-//            listener.updateStop(array);
-////        sendNotification(notifyMsg.toString());
-
-    }
-
-
-    private void sendNotification(JSONArray stationList) {
-
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
 
@@ -335,6 +293,7 @@ public class BeaconService extends Service
         contentIntent.putExtra("source", stationList.toString());
 
         StringBuilder msg = new StringBuilder();
+
 
         for(int i=0;i<stationList.length();i++){
             JSONObject stopObj = stationList.optJSONObject(i);
@@ -377,5 +336,10 @@ public class BeaconService extends Service
         NotificationManager notificationManager =
                 (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(NOTIFY_BEACON_SERVICE, notification);
+
+
+        if(StopListActivity.instance!=null){
+            StopListActivity.instance.updateStop(stationList);
+        }
     }
 }
