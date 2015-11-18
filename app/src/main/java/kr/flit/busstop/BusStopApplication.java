@@ -33,10 +33,8 @@ implements BootstrapNotifier {
 //        beaconManager.setBackgroundScanPeriod(5000L);
 //        beaconManager.setBackgroundBetweenScanPeriod(5000L);
 
+    protected void init(){
 
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "onCreate Begin");
         BeaconManager beaconManager = org.altbeacon.beacon.BeaconManager.getInstanceForApplication(this);
 
         // By default the AndroidBeaconLibrary will only find AltBeacons.  If you wish to make it
@@ -53,7 +51,7 @@ implements BootstrapNotifier {
 
         beaconManager.getBeaconParsers().add(new BeaconParser().
                 //0xFF10
-                setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"));
+                        setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"));
         //a495ff10-c5b1-4b44
         //0215
 
@@ -81,6 +79,12 @@ implements BootstrapNotifier {
         // If you wish to test beacon detection in the Android Emulator, you can use code like this:
         // BeaconManager.setBeaconSimulator(new TimedBeaconSimulator() );
         // ((TimedBeaconSimulator) BeaconManager.getBeaconSimulator()).createTimedSimulatedBeacons();
+    }
+
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "onCreate Begin");
+        init();
         Log.d(TAG, "onCreate End");
     }
 

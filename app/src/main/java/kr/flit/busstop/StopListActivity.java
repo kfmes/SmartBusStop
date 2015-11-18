@@ -1,13 +1,22 @@
 package kr.flit.busstop;
 
+import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -52,6 +61,8 @@ public class StopListActivity extends AppCompatActivity
 implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 {
 
+    private static final int REQUEST_CODE_ASK_PERMISSIONS = 10;
+    private static final int REQUEST_PERMISSION_SETTING = 11;
     private AsyncTask<Void, Void, JSONObject> task;
     private JSONArray resultList ;
 
@@ -539,12 +550,12 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                                 .post(body)
                                 .build();
 
-                        if(prefs.contains("test")){
-                            Log.d(TAG, "from prefs");
-                            String jsonStr = prefs.getString("test","");
-                            JSONObject json = new JSONObject(jsonStr);
-                            return json;
-                        }
+//                        if(prefs.contains("test")){
+//                            Log.d(TAG, "from prefs");
+//                            String jsonStr = prefs.getString("test","");
+//                            JSONObject json = new JSONObject(jsonStr);
+//                            return json;
+//                        }
                         Response response = client.newCall(request).execute();
                         if(response.isSuccessful()){
                             try {
@@ -679,6 +690,86 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
     protected void onResume() {
         super.onResume();
         instance = this;
+        checkAppPermission();
+
+    }
+
+    private void checkAppPermission(){
+        final String permissionLocation = Manifest.permission.ACCESS_FINE_LOCATION;
+        int hasLocationPermission = ContextCompat.checkSelfPermission(this, permissionLocation);
+        Log.d(TAG, "hasLocationPermission : " + (hasLocationPermission==0) + " " + hasLocationPermission );
+
+        if (hasLocationPermission != PackageManager.PERMISSION_GRANTED) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissionLocation)) {
+                Snackbar.make(recyclerView, R.string.msg_permission_denied, Snackbar.LENGTH_INDEFINITE)
+                        .setAction(android.R.string.ok, new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getPackageName(), null);
+                        intent.setData(uri);
+                        startActivityForResult(intent, REQUEST_PERMISSION_SETTING);
+
+                        ActivityCompat.requestPermissions(StopListActivity.this,
+                                new String[]{permissionLocation},
+                                REQUEST_CODE_ASK_PERMISSIONS);
+
+                    }
+                }).show();
+                showMessageOKCancel(getString(R.string.req_permission_location),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                ActivityCompat.requestPermissions(StopListActivity.this,
+                                        new String[]{permissionLocation},
+                                        REQUEST_CODE_ASK_PERMISSIONS);
+                            }
+                        });
+                return;
+            }
+            ActivityCompat.requestPermissions(this,
+                    new String[] {permissionLocation},
+                    REQUEST_CODE_ASK_PERMISSIONS);
+//            ((BusStopApplication)getApplication()).init();
+            startService(new Intent(this,BeaconService.class));
+            return;
+
+
+        }
+    }
+    private void requestLocationPermission(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            }, REQUEST_CODE_ASK_PERMISSIONS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_CODE_ASK_PERMISSIONS:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission Granted
+//                    insertDummyContact();
+                } else {
+                    // Permission Denied
+                    Snackbar.make(recyclerView, R.string.msg_permission_denied, Snackbar.LENGTH_LONG).show();
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
+        new AlertDialog.Builder(this)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, okListener)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create()
+                .show();
     }
 
     @Override
