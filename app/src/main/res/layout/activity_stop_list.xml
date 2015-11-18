@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:theme="@style/AppTheme.AppBarOverlay"
         app:contentScrim="?attr/colorAccent"
+        android:id="@+id/appBarLayout"
         >
         <!--
 
@@ -68,7 +69,7 @@ app:layout_scrollFlags="scroll|enterAlways"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/splash"
-        android:background="@color/colorPrimary"
+        android:background="@color/colorAccent"
 
         >
         <!--

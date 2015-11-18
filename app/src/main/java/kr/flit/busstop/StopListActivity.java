@@ -110,6 +110,7 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         setContentView(R.layout.activity_stop_list);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        View appBarLayout = findViewById(R.id.appBarLayout);
 
 
         this.listViewStop = (ListView) findViewById(R.id.listViewStop);
@@ -145,8 +146,9 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
         if(strSource==null){
             showSplash();
-        }else
+        }else {
             viewSplash.setVisibility(View.GONE);
+        }
 
 
         fontOldBaths = Typeface.createFromAsset(getAssets(),
@@ -428,7 +430,9 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
 
     private void showSplash() {
+        findViewById(R.id.appBarLayout).setVisibility(View.GONE);
         viewSplash.setVisibility(View.VISIBLE);
+//        viewSplash.bringToFront();
         viewSplash.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -446,6 +450,7 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 //                viewSplash.setAnimation(anim);
 //                anim.start();
                 viewSplash.setVisibility(View.GONE);
+                findViewById(R.id.appBarLayout).setVisibility(View.VISIBLE);
             }
         }, 2200L);
 
