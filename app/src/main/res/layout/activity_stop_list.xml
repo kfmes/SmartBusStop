@@ -11,16 +11,47 @@
     <android.support.design.widget.AppBarLayout
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:theme="@style/AppTheme.AppBarOverlay"
+        app:contentScrim="?attr/colorAccent"
+        >
+        <!--
+
+        android:theme="@style/AppTheme.AppBarOverlay"
+        app:layout_scrollFlags="scroll|exitUntilCollapsed"
+        -->
+<!--
+
+app:layout_scrollFlags="scroll|enterAlways"
+-->
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
+            android:background="@color/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlwaysCollapsed"
+            app:layout_collapseMode="parallax"
+            android:elevation="6dp"
             app:popupTheme="@style/AppTheme.PopupOverlay"/>
 
+        <View
+            android:id="@+id/headerSeparator"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#525353"
+            android:visibility="gone"
+            />
+        <include layout="@layout/header_stop_list" />
+
     </android.support.design.widget.AppBarLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/recyclerView"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        >
+    </android.support.v7.widget.RecyclerView>
 
     <include layout="@layout/content_stop_list"/>
 <!--
@@ -32,4 +63,26 @@
         android:layout_margin="@dimen/fab_margin"
         android:src="@android:drawable/ic_dialog_email"/>
 -->
+    <RelativeLayout
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/splash"
+        android:background="@color/colorPrimary"
+
+        >
+        <!--
+        android:background="#4C348A"
+        android:background="@color/colorAccent"
+        -->
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/intro"
+            android:id="@+id/imageView"/>
+
+    </RelativeLayout>
 </android.support.design.widget.CoordinatorLayout>

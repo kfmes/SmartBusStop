@@ -1,15 +1,24 @@
 package kr.flit.busstop;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -19,6 +28,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.okhttp.FormEncodingBuilder;
 import com.squareup.okhttp.OkHttpClient;
@@ -43,18 +53,20 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 {
 
     private AsyncTask<Void, Void, JSONObject> task;
-    private JSONObject stopInfo ;
     private JSONArray resultList ;
 
     private ListView listViewStop;
     private ListView listViewInfo;
-
+    private RecyclerView recyclerView;
 
     private EditText editBusSearch;
     private TextView textStopTitle;
 
+    private JSONObject stopList;
+
     JSONArrayAdapterItem adapterStop;
     JSONArrayAdapterItem adapter;
+    RecyclerView.Adapter adapter2;
     private Context context;
     private final String TAG = "StopList";
 
@@ -67,12 +79,21 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
     protected static StopListActivity instance;
     private View viewSplash;
+    private ViewPager viewpager;
+
+    float lastLat ;
+    float lastLng ;
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.context = this;
         instance = this;
+        
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        lastLat = prefs.getFloat("lastLat", 0.0f);
+        lastLng = prefs.getFloat("lastLng", 0.0f);
 
         setContentView(R.layout.activity_stop_list);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -87,6 +108,23 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         this.stopArrivalProgress = findViewById(R.id.stopArrivalProgress);
         this.viewSplash = findViewById(R.id.splash);
 
+        this.recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+
+        if(Build.VERSION.SDK_INT<Build.VERSION_CODES.LOLLIPOP){
+            findViewById(R.id.contentSeparator).setVisibility(View.VISIBLE);
+            findViewById(R.id.headerSeparator).setVisibility(View.VISIBLE);
+        }
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false ));
+//        this.viewpager = (ViewPager) findViewById(R.id.viewpager);
+
+//        viewpager.setVisibility(View.GONE);
+//        viewpager.setAdapter(getStopAdapter());
+//        viewpager.setPageMargin(getResources().getDisplayMetrics().widthPixels / -9);
+//        viewpager.setOffscreenPageLimit(2);
+
+
+
 //        JSONArray source = getIntent().get
         JSONArray source = new JSONArray();
         String strSource = getIntent().getStringExtra("source");
@@ -99,13 +137,8 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
             viewSplash.setVisibility(View.GONE);
 
 
-//        TextView tv = (TextView) findViewById(R.id.CustomFontText);
-//        tv.setTypeface(tf);
         fontOldBaths = Typeface.createFromAsset(getAssets(),
                 "BMHANNA_11yrs_otf.otf");
-
-
-
 
 
         stopArrivalProgress.setVisibility(View.GONE);
@@ -117,9 +150,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
         textStopTitle.setText("");
 
-
-
-
 //        startService(new Intent(this, BeaconService.class));
 
         editBusSearch.addTextChangedListener(new TextWatcher() {
@@ -130,7 +160,7 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(s.length()==5){
+                if (s.length() == 5) {
                     int arsId = Integer.parseInt(s.toString());
                     onSearchStop(arsId);
                 }
@@ -151,7 +181,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 //            ignore exception
 //            e.printStackTrace();
         }
-
 
         adapterStop = new JSONArrayAdapterItem(this){
             @Override
@@ -189,6 +218,12 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                 emptyView.setVisibility(exists ? View.GONE : View.VISIBLE);
 
                 JSONArray stopList = adapterStop.getDataSource();
+                try {
+                    System.out.println(stopList.toString(4));
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
 //                JSONArray buslist = adapter.getDataSource();
 
 
@@ -278,8 +313,107 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         };
         listViewInfo.setAdapter(adapter);
 
+        adapter2 = new RecyclerView.Adapter() {
+            @Override
+            public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+                ViewGroup view = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.listitem_stopinfo, parent, false);
+                ViewHolder viewHolder = new ViewHolder(view);
+                return viewHolder;
+            }
+
+            @Override
+            public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+                ViewHolder h = (ViewHolder) holder;
+                JSONObject item = resultList.optJSONObject(position);
+
+/*
+                    //
+                    3 간선
+                    4 지선
+                    5 순환
+                    6 광역
+                    7 8 경기, 인천
+                    default
+                    */
+                if(item!=null) {
+                    int busColor = getBusColor(item.optInt("routeType"));
+                    h.text1.setTextColor(busColor);
+
+                    String adirection = item.optString("adirection");
+                    if (adirection.length() > 0)
+                        adirection += "행";
+
+                    int isLast1 = item.optInt("isLast1");
+                    String nextBus = item.optString("nextBus");
+
+                    h.text1.setText(item.optString("rtNm"));
+                    if (isLast1 == 1)
+                        h.imgEndBus.setVisibility(View.VISIBLE);
+                    else
+                        h.imgEndBus.setVisibility(View.GONE);
+//                    String prefix = String.format("[%d %s]", isLast1, nextBus);
+
+                    h.text2.setText(
+//                            prefix +
+                            item.optString("arrmsg1"));
+                    h.text3.setText(adirection);
+                }
+
+            }
+
+            @Override
+            public int getItemCount() {
+                return resultList==null ? 0 : resultList.length();
+            }
+
+
+        };
+        listViewInfo.setVisibility(View.GONE);
+        recyclerView.setAdapter(adapter2);
 
     }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_stop_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_maps) {
+            Intent intent = new Intent(this, MapsActivity.class);
+            intent.putExtra("lat",lastLat);
+            intent.putExtra("lng", lastLng);
+
+            startActivity(intent);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder{
+        TextView text1;
+        TextView text2;
+        TextView text3;
+        ImageView imgEndBus;
+
+        public ViewHolder(View itemView) {
+            super(itemView);
+            imgEndBus = (ImageView) itemView.findViewById(R.id.imgEndBus);
+            text1 = (TextView) itemView.findViewById(R.id.textView1);
+            text2 = (TextView) itemView.findViewById(R.id.textView2);
+            text3 = (TextView) itemView.findViewById(R.id.textView3);
+            text1.setTypeface(null, Typeface.BOLD);
+        }
+    }
+
 
     private void showSplash() {
         viewSplash.setVisibility(View.VISIBLE);
@@ -363,7 +497,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
         editBusSearch.setSelection(editBusSearch.getText().length());
 
-
         if (task != null)
             return;
 
@@ -406,10 +539,19 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                                 .post(body)
                                 .build();
 
+                        if(prefs.contains("test")){
+                            Log.d(TAG, "from prefs");
+                            String jsonStr = prefs.getString("test","");
+                            JSONObject json = new JSONObject(jsonStr);
+                            return json;
+                        }
                         Response response = client.newCall(request).execute();
                         if(response.isSuccessful()){
                             try {
-                                JSONObject json = new JSONObject(response.body().string());
+                                String resp = response.body().string();
+//                                prefs.edit().putString("test", resp).commit();
+
+                                JSONObject json = new JSONObject(resp);
                                 return json;
                             }catch (JSONException e){
                                 System.out.println( response.body().toString());
@@ -429,17 +571,28 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                     super.onPostExecute(jsonObject);
                     JSONObject response = jsonObject;
 
+//                    try {
+//                        System.out.println(response.toString(4));
+//                    }catch(Exception e){
+//                        e.printStackTrace();;
+//                    }
+
+                    float gpsX=0;
+                    float gpsY=0;
+                    String stNm = "";
+
                     stopArrivalEmptyView.setVisibility(View.GONE);
                     stopArrivalProgress.setVisibility(View.GONE);
 //                        Toast.makeText(context, "onPostExcute", Toast.LENGTH_SHORT).show();
                     if(response!=null ){
-                        Log.d(TAG, response.toString());
+//                        Log.d(TAG, response.toString());
 
                         JSONArray resultList = response.optJSONArray("resultList");
                         if(resultList!=null && resultList.length()>0){
                             ArrayList<JSONObject> tmpList = new ArrayList<>(resultList.length());
                             for(int i=0;i<resultList.length();i++)
                                 tmpList.add(resultList.optJSONObject(i));
+
                             Collections.sort(tmpList, new Comparator<JSONObject>() {
                                 String keyIsEnd = "운행종료";
 
@@ -465,6 +618,12 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
                             for(JSONObject jsonObj : tmpList) {
                                 String rtNm = jsonObj.optString("rtNm");
+                                if(stNm==null || stNm.length()==0)
+                                    stNm = jsonObj.optString("stNm");
+                                if(gpsX==0 || gpsY==0){
+                                    gpsX = (float) jsonObj.optDouble("gpsX",0);
+                                    gpsY = (float) jsonObj.optDouble("gpsY",0);
+                                }
 
                                 if(rtNm.length()>2 &&
                                         Character.isDigit(rtNm.charAt(0)) ){
@@ -494,8 +653,15 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
                     adapter.setDataSource(resultList);
                     adapter.notifyDataSetChanged();
-//                        Toast.makeText(context, "!!!", Toast.LENGTH_SHORT).show();
+                    lastLng = gpsX;
+                    lastLat = gpsY;
+                    prefs.edit().
+                            putFloat("lastLng", lastLng).
+                            putFloat("lastLat", lastLat).apply();
+                    textStopTitle.setText(stNm);
+                        Toast.makeText(context, "!!!", Toast.LENGTH_SHORT).show();
                     task = null;
+
 
 
                 }
@@ -521,12 +687,29 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
             @Override
             public void run() {
 
-                if(array.length()>0)
+                if (array.length() > 0)
                     adapterStop.setDataSource(array);
             }
         });//, 200L);
+        recyclerView.post(new Runnable() {
+            @Override
+            public void run() {
+                adapter2.notifyDataSetChanged();
+            }
+        });
+
+
 
     }
 
+    public void onClickMap(View v){
+    }
+
+    public void onClickMessage(View v){
+
+    }
+    public void onClickMoreStop(View v){
+
+    }
 
 }

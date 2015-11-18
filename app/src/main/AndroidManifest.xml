@@ -12,6 +12,7 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
     <!--
     <permission
 
@@ -20,7 +21,7 @@
 
 
     <uses-permission android:name="kr.flit.busstop.googlemaps.locationapi.maps.permission.MAPS_RECEIVE" />
--->
+    -->
     <application
         android:name=".BusStopApplication"
         android:allowBackup="true"
@@ -41,12 +42,15 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden" >
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!--
+        -->
         <!--
         <activity
             android:name=".IntroActivity"
@@ -61,9 +65,19 @@
             android:value="AIzaSyC4_HWLcV5c3c6j1anZQahF-7O4kicO2Kk" />
 
         <activity
-            android:parentActivityName=".StopListActivity"
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps" >
+            android:label="@string/title_activity_maps"
+            android:parentActivityName=".StopListActivity" >
+        </activity>
+        <activity
+            android:name=".BusStopActivity"
+            android:label="@string/title_activity_bus_stop"
+            android:theme="@style/AppTheme.NoActionBar" >
+        </activity>
+        <activity
+            android:name=".Main2Activity"
+            android:label="@string/title_activity_main2"
+            android:theme="@style/AppTheme.NoActionBar" >
         </activity>
     </application>
 
