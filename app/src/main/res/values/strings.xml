@@ -15,4 +15,6 @@
     <string name="title_activity_bus_stop">BusStopActivity</string>
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="title_activity_main2">Main2Activity</string>
+    <string name="msg_permission_denied">위치에 액세스 권한이 없습니다. 비콘 기능을 사용할 수 없습니다. 권한을 활성화 해주세요</string>
+    <!--<string name="msg_permission_denied">위치에 액세스 권한이 없습니다. 비콘 기능을 사용할 수 없습니다.</string>-->
 </resources>

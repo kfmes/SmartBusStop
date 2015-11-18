@@ -45,6 +45,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
+import org.altbeacon.beacon.BeaconManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -691,7 +692,17 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         super.onResume();
         instance = this;
         checkAppPermission();
+        BeaconManager manager = BeaconManager.getInstanceForApplication(getApplicationContext());
+        manager.setBackgroundMode(false);
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        BeaconManager manager = BeaconManager.getInstanceForApplication(getApplicationContext());
+        manager.setBackgroundMode(true);
+
+        super.onDestroy();
     }
 
     private void checkAppPermission(){
@@ -716,23 +727,11 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
                     }
                 }).show();
-                showMessageOKCancel(getString(R.string.req_permission_location),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                                ActivityCompat.requestPermissions(StopListActivity.this,
-                                        new String[]{permissionLocation},
-                                        REQUEST_CODE_ASK_PERMISSIONS);
-                            }
-                        });
-                return;
             }
             ActivityCompat.requestPermissions(this,
-                    new String[] {permissionLocation},
+                    new String[]{permissionLocation},
                     REQUEST_CODE_ASK_PERMISSIONS);
-//            ((BusStopApplication)getApplication()).init();
-            startService(new Intent(this,BeaconService.class));
+
             return;
 
 
@@ -753,6 +752,8 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // Permission Granted
 //                    insertDummyContact();
+                    ((BusStopApplication)getApplication()).init();
+                    startService(new Intent(this,BeaconService.class));
                 } else {
                     // Permission Denied
                     Snackbar.make(recyclerView, R.string.msg_permission_denied, Snackbar.LENGTH_LONG).show();
@@ -761,6 +762,15 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode==REQUEST_PERMISSION_SETTING){
+            ((BusStopApplication)getApplication()).init();
+//            startService(new Intent(this,BeaconService.class));
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
