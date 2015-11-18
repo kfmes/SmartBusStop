@@ -169,12 +169,13 @@ public class BeaconService extends Service
             busStopId += beacon.getId3().toInt();
             final String sBusStopId = String.valueOf(busStopId);
 
-            if(prefsStation.contains(sBusStopId)==false && reqProcessses.contains(busStopId)==false) {
+            if(prefsStation.contains(sBusStopId)==false ) {
 //                stationNames.put(busStopId, "");
                 final int fBusStopId = busStopId;
                 String url = "http://m.bus.go.kr/mBus/bus/getStationByUid.bms";
                 String search = String.valueOf(fBusStopId);
                 String arsId = search.replaceAll("-", "");
+                Log.d(TAG, "Get Stop Name : " + sBusStopId);
 
                 OkHttpClient client = new OkHttpClient();
 
@@ -308,6 +309,8 @@ public class BeaconService extends Service
         for(int i=0;i<stationList.length();i++){
             JSONObject stopObj = stationList.optJSONObject(i);
             String name = stopObj.optString("name");
+            if(name==null || name.length()==0)
+                continue;;
             int busStopId = stopObj.optInt("arsId");
             String sBusStopId = String.valueOf(busStopId);
             double distance = stopObj.optDouble("distance");
@@ -319,6 +322,8 @@ public class BeaconService extends Service
             );
             msg.append(msgIdNameDist).append("\n");
         }
+        //아직 정류장 이름을 못가져온 경우
+        if(msg.length()==0) return;
 
 
 

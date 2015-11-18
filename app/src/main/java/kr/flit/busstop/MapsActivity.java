@@ -178,9 +178,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 }
                             }
 
-                            for (BusStop stop : newList) {
-                                if (list.contains(stop) == false)
-                                    list.add(stop);
+                            synchronized (list) {
+                                for (BusStop stop : newList) {
+                                    if (list.contains(stop) == false)
+                                        list.add(stop);
+                                }
                             }
 
                         }
