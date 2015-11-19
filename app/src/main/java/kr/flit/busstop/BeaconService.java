@@ -61,6 +61,8 @@ public class BeaconService extends Service
     }
 
     BeaconManager manager;
+    NotifyHideHandler notifyHideHandler = new NotifyHideHandler();
+
     public BeaconService() {
 
     }
@@ -86,6 +88,7 @@ public class BeaconService extends Service
         manager.setBackgroundMode(false);
         manager.bind(this);
 //        sendNotification(new JSONArray());
+
 
         try {
             manager.startRangingBeaconsInRegion(new Region("myRangingUniqueId", null, null, null));
@@ -272,18 +275,15 @@ public class BeaconService extends Service
 
     }
 
-    static Handler notifyHideHandler = new Handler(){
-        @Override
+    static class NotifyHideHandler extends Handler{
         public void handleMessage(Message msg) {
-
             super.handleMessage(msg);
             Context context = (Context) msg.obj;
             NotificationManager notificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.cancelAll();
-
         }
-    };
+    }
 
     private void sendNotification() {
         Log.d(TAG, "sendNotification");
