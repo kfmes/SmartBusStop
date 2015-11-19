@@ -2,10 +2,15 @@ package kr.flit.busstop;
 
 import android.location.Location;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.Serializable;
+
 /**
  * Created by kfmes on 15. 11. 17..
  */
-public class BusStop {
+public class BusStop implements Serializable{
     private Location location;
     private String arsId;
     private String name;
@@ -25,6 +30,21 @@ public class BusStop {
         int result = arsId != null ? arsId.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
+    }
+
+    public JSONObject toJSON() {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("arsId", arsId);
+            json.put("name", name);
+            json.put("stNm", name);
+            json.put("gpsX", location.getLongitude());
+            json.put("gpsY", location.getLatitude());
+            return json;
+        }catch (JSONException e){
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public Location getLocation() {
