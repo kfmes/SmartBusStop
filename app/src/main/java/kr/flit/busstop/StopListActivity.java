@@ -56,6 +56,7 @@ implements BeaconService.StopListListener
 
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 10;
     private static final int REQUEST_PERMISSION_SETTING = 11;
+    private static final int REQUEST_MAPS = 20;
     private AsyncTask<Void, Void, JSONObject> task;
     private JSONArray resultList ;
 
@@ -254,10 +255,10 @@ implements BeaconService.StopListListener
 
         if (id == R.id.action_maps) {
             Intent intent = new Intent(this, MapsActivity.class);
-            intent.putExtra("lat",lastLat);
+            intent.putExtra("lat", lastLat);
             intent.putExtra("lng", lastLng);
 
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_MAPS);
             return true;
         }
 
@@ -558,7 +559,7 @@ implements BeaconService.StopListListener
     private void checkAppPermission(){
         final String permissionLocation = Manifest.permission.ACCESS_FINE_LOCATION;
         int hasLocationPermission = ContextCompat.checkSelfPermission(this, permissionLocation);
-        Log.d(TAG, "hasLocationPermission : " + (hasLocationPermission==0) + " " + hasLocationPermission );
+        Log.d(TAG, "hasLocationPermission : " + (hasLocationPermission == 0) + " " + hasLocationPermission);
 
         if (hasLocationPermission != PackageManager.PERMISSION_GRANTED) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissionLocation)) {
@@ -619,8 +620,13 @@ implements BeaconService.StopListListener
         if(requestCode==REQUEST_PERMISSION_SETTING){
             ((BusStopApplication)getApplication()).init();
 //            startService(new Intent(this,BeaconService.class));
+        }else if(requestCode==REQUEST_MAPS && data!=null){
+            BusStop stop = (BusStop) data.getSerializableExtra("busstop");
+            updateStop(stop);
+
+        }else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
@@ -630,6 +636,13 @@ implements BeaconService.StopListListener
                 .setNegativeButton(android.R.string.cancel, null)
                 .create()
                 .show();
+    }
+
+    private void updateStop(BusStop stop) {
+        resultList = new JSONArray(); // to force refresh
+        JSONArray arr = new JSONArray();
+        arr.put(stop.toJSON());
+        updateStop(arr);
     }
 
     @Override

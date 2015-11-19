@@ -1,14 +1,13 @@
 package kr.flit.busstop;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -31,14 +30,15 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private float baseLat;
     private float baseLng;
-    private List<BusStop> list;
+//    private List<BusStop> list;
+    private HashMap<String, BusStop> map = new HashMap<>();
     private View layout;
     private Context context;
 
@@ -47,7 +47,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         context = this;
         setContentView(R.layout.activity_maps);
-        list = new ArrayList<>();
 //        getActionBar().setDisplayHomeAsUpEnabled(true);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
@@ -95,7 +94,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                Snackbar.make(layout, marker.getTitle(), Snackbar.LENGTH_SHORT).show();
+//                Snackbar.make(layout, marker.getTitle(), Snackbar.LENGTH_SHORT).show();
 
                 return false;
             }
@@ -103,7 +102,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                Toast.makeText(context, marker.getTitle(), Toast.LENGTH_LONG).show();
+                BusStop stop =  map.get(marker.getSnippet());
+                Intent data = new Intent();
+                data.putExtra("busstop", stop);
+//                setResult(RESULT_OK);
+                setResult(RESULT_OK, data);
+                finish();
             }
         });
         // Add a marker in Sydney and move the camera
@@ -170,18 +174,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     String arsId = stopObj.optString("arsId");
                                     stop.setName(stopObj.optString("stationNm"));
                                     stop.setArsId(arsId);
-                                    Location location = new Location(arsId);
-                                    location.setLongitude(gpsx);
-                                    location.setLatitude(gpsy);
-                                    stop.setLocation(location);
+                                    stop.setLatLng(gpsy, gpsx);
+//                                    Location location = new Location(arsId);
+//                                    location.setLongitude(gpsx);
+//                                    location.setLatitude(gpsy);
+//                                    stop.setLocation(location);
                                     newList.add(stop);
                                 }
                             }
 
-                            synchronized (list) {
+                            synchronized (map) {
                                 for (BusStop stop : newList) {
-                                    if (list.contains(stop) == false)
-                                        list.add(stop);
+                                    if(map.containsKey(stop.getArsId())==false){
+                                        map.put(stop.getArsId(), stop);
+                                    }
                                 }
                             }
 
@@ -201,10 +207,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 super.onPostExecute(result);
                 if(result){
                     mMap.clear();
-                    for(BusStop stop : list){
+                    for(BusStop stop : map.values()){
                         MarkerOptions marker = new MarkerOptions()
                                 .position(
-                                        new LatLng(stop.getLocation().getLatitude(),stop.getLocation().getLongitude()))
+                                        new LatLng(stop.getLat(), stop.getLng()))
                                 .title(stop.getName())
                                 .snippet(stop.getArsId())
                                 .visible(true)
