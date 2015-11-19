@@ -1,7 +1,5 @@
 package kr.flit.busstop;
 
-import android.location.Location;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,9 +9,10 @@ import java.io.Serializable;
  * Created by kfmes on 15. 11. 17..
  */
 public class BusStop implements Serializable{
-    private Location location;
     private String arsId;
     private String name;
+    private double lat;
+    private double lng;
 
     @Override
     public boolean equals(Object o) {
@@ -38,8 +37,8 @@ public class BusStop implements Serializable{
             json.put("arsId", arsId);
             json.put("name", name);
             json.put("stNm", name);
-            json.put("gpsX", location.getLongitude());
-            json.put("gpsY", location.getLatitude());
+            json.put("gpsX", lng);
+            json.put("gpsY", lat);
             return json;
         }catch (JSONException e){
             e.printStackTrace();
@@ -47,13 +46,21 @@ public class BusStop implements Serializable{
         }
     }
 
-    public Location getLocation() {
-        return location;
-    }
+//    public Location getLocation() {
+//        Location location = new Location("busstop");
+//        location.setLatitude(lat);
+//        location.setLongitude(lng);
+//        return location;
+//    }
 
-    public void setLocation(Location location) {
-        this.location = location;
+    public void setLatLng(double lat, double lng){
+        this.lat = lat;
+        this.lng = lng;
     }
+//    public void setLocation(Location location) {
+//        this.lat = location.getLatitude();
+//        this.lng = location.getLongitude();
+//    }
 
     public String getArsId() {
         return arsId;
@@ -69,5 +76,12 @@ public class BusStop implements Serializable{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public double getLat() {
+        return lat;
+    }
+    public double getLng() {
+        return lng;
     }
 }
