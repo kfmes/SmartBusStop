@@ -421,7 +421,7 @@ implements BeaconService.StopListListener
                                 JSONObject json = new JSONObject(resp);
                                 return json;
                             }catch (JSONException e){
-                                System.out.println( response.body().toString());
+                                Log.d(TAG, response.body().string());
                                 e.printStackTrace();
                             }
                         }
@@ -438,11 +438,6 @@ implements BeaconService.StopListListener
                     super.onPostExecute(jsonObject);
                     JSONObject response = jsonObject;
 
-//                    try {
-//                        System.out.println(response.toString(4));
-//                    }catch(Exception e){
-//                        e.printStackTrace();;
-//                    }
 
                     float gpsX=0;
                     float gpsY=0;

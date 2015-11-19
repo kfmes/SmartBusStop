@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -37,10 +38,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private float baseLat;
     private float baseLng;
-//    private List<BusStop> list;
     private HashMap<String, BusStop> map = new HashMap<>();
     private View layout;
     private Context context;
+    private static final String TAG = MapsActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,10 +83,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Location newLoc = new Location("new");
                 newLoc.setLatitude(cameraPosition.target.latitude);
                 newLoc.setLongitude(cameraPosition.target.longitude);
-                System.out.println("onCameraChange.1");
 
-                if (prevLocation == null || newLoc.distanceTo(prevLocation) > 50) {
-                    System.out.println("onCameraChange.2");
+                if (prevLocation == null || newLoc.distanceTo(prevLocation) > 150) {
+                    Log.d(TAG, "onCameraChange.reloadArroundBusstop");
                     reloadArroundBusstop(newLoc);
                 }
                 prevLocation = newLoc;
@@ -105,15 +105,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 BusStop stop =  map.get(marker.getSnippet());
                 Intent data = new Intent();
                 data.putExtra("busstop", stop);
-//                setResult(RESULT_OK);
                 setResult(RESULT_OK, data);
                 finish();
             }
         });
-        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(baseLat, baseLng), 18.0f));
     }
 
@@ -136,8 +132,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String tmX = String.valueOf(newLoc.getLongitude());
                 String tmY = String.valueOf(newLoc.getLatitude());
                 String radius = "300";
-                System.out.println("x,y" + tmX + "/" + tmY);
-
+                Log.d(TAG, "x, y : " + tmX + "," +tmY );
 
 
 
@@ -157,41 +152,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Response response = client.newCall(request).execute();
                     if(response.isSuccessful()){
                         String res = response.body().string();
-                            JSONObject json = new JSONObject(res);
-                        System.out.println(res);
+                        Log.d(TAG, "station by pos : " + res);
+                        JSONObject json = new JSONObject(res);
 
-                            JSONArray resultList = json.optJSONArray("resultList");
-                            ArrayList<BusStop> newList = new ArrayList<BusStop>();
 
-                            if (resultList != null && resultList.length() > 0) {
+                        JSONArray resultList = json.optJSONArray("resultList");
+                        ArrayList<BusStop> newList = new ArrayList<BusStop>();
 
-                                for (int i = 0; i < resultList.length(); i++) {
-                                    JSONObject stopObj = resultList.optJSONObject(i);
-                                    BusStop stop = new BusStop();
+                        if (resultList != null && resultList.length() > 0) {
 
-                                    double gpsx = stopObj.optDouble("gpsX");
-                                    double gpsy = stopObj.optDouble("gpsY");
-                                    String arsId = stopObj.optString("arsId");
-                                    stop.setName(stopObj.optString("stationNm"));
-                                    stop.setArsId(arsId);
-                                    stop.setLatLng(gpsy, gpsx);
-//                                    Location location = new Location(arsId);
-//                                    location.setLongitude(gpsx);
-//                                    location.setLatitude(gpsy);
-//                                    stop.setLocation(location);
-                                    newList.add(stop);
-                                }
+                            for (int i = 0; i < resultList.length(); i++) {
+                                JSONObject stopObj = resultList.optJSONObject(i);
+                                BusStop stop = new BusStop();
+
+                                double gpsx = stopObj.optDouble("gpsX");
+                                double gpsy = stopObj.optDouble("gpsY");
+                                String arsId = stopObj.optString("arsId");
+                                stop.setName(stopObj.optString("stationNm"));
+                                stop.setArsId(arsId);
+                                stop.setLatLng(gpsy, gpsx);
+                                newList.add(stop);
                             }
-
-                            synchronized (map) {
-                                for (BusStop stop : newList) {
-                                    if(map.containsKey(stop.getArsId())==false){
-                                        map.put(stop.getArsId(), stop);
-                                    }
-                                }
-                            }
-
                         }
+
+                        synchronized (map) {
+                            for (BusStop stop : newList) {
+                                if(map.containsKey(stop.getArsId())==false){
+                                    map.put(stop.getArsId(), stop);
+                                }
+                            }
+                        }
+
+                    } // response is successful
                     return true;
                 } catch (IOException e) {
                     e.printStackTrace();
