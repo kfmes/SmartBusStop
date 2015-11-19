@@ -9,7 +9,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -40,11 +42,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 public class BeaconService extends Service
     implements BeaconConsumer, RangeNotifier
 {
-    private int NOTIFY_BEACON_SERVICE = 10;
+    protected static int NOTIFY_BEACON_SERVICE = 10;
     private static final String TAG = "BeaconService";
     private SharedPreferences prefsStation ;
 //    private HashMap<Integer, String> stationNames = new HashMap<>();
@@ -79,7 +82,7 @@ public class BeaconService extends Service
         Log.d(TAG, "onCreate");
         manager = BeaconManager.getInstanceForApplication(this);
         prefsStation = getSharedPreferences("station", Context.MODE_PRIVATE);
-        manager.setForegroundBetweenScanPeriod(10*1000L);
+        manager.setForegroundBetweenScanPeriod(10 * 1000L);
         manager.setBackgroundMode(false);
         manager.bind(this);
 //        sendNotification(new JSONArray());
@@ -269,6 +272,18 @@ public class BeaconService extends Service
 
     }
 
+    static Handler notifyHideHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+
+            super.handleMessage(msg);
+            Context context = (Context) msg.obj;
+            NotificationManager notificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancelAll();
+
+        }
+    };
 
     private void sendNotification() {
         Log.d(TAG, "sendNotification");
@@ -356,6 +371,12 @@ public class BeaconService extends Service
                 (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(NOTIFY_BEACON_SERVICE, notification);
 
+        notifyHideHandler.removeMessages(1);
+
+        Message msgObj = Message.obtain();
+        msgObj.what = 1;
+        msgObj.obj = this;
+        notifyHideHandler.sendMessageDelayed(msgObj, TimeUnit.MINUTES.toMillis(5));
 
         if(StopListActivity.instance!=null){
             StopListActivity.instance.updateStop(stationList);
