@@ -30,14 +30,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
-import android.widget.AdapterView;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squareup.okhttp.FormEncodingBuilder;
 import com.squareup.okhttp.OkHttpClient;
@@ -54,12 +49,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import kr.flit.busstop.adapter.JSONArrayAdapterItem;
-import kr.flit.busstop.adapter.ViewProjector;
-
 
 public class StopListActivity extends AppCompatActivity
-implements AbsListView.OnItemClickListener, BeaconService.StopListListener
+implements BeaconService.StopListListener
 {
 
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 10;
@@ -67,18 +59,14 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
     private AsyncTask<Void, Void, JSONObject> task;
     private JSONArray resultList ;
 
-    private ListView listViewStop;
-    private ListView listViewInfo;
     private RecyclerView recyclerView;
 
     private EditText editBusSearch;
     private TextView textStopTitle;
 
-    private JSONObject stopList;
+//    private JSONObject stopList;
 
-    JSONArrayAdapterItem adapterStop;
-    JSONArrayAdapterItem adapter;
-    RecyclerView.Adapter adapter2;
+    RecyclerView.Adapter adapter;
     private Context context;
     private final String TAG = "StopList";
 
@@ -113,9 +101,7 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         View appBarLayout = findViewById(R.id.appBarLayout);
 
 
-        this.listViewStop = (ListView) findViewById(R.id.listViewStop);
         this.editBusSearch = (EditText) findViewById(R.id.editBusSearch);
-        this.listViewInfo = (ListView) findViewById(R.id.listView);
         this.textStopTitle = (TextView) findViewById(R.id.textStopTitle);
         this.stopArrivalEmptyView = findViewById(R.id.stopArrivalEmptyView);
         this.stopArrivalProgress = findViewById(R.id.stopArrivalProgress);
@@ -129,13 +115,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false ));
-//        this.viewpager = (ViewPager) findViewById(R.id.viewpager);
-
-//        viewpager.setVisibility(View.GONE);
-//        viewpager.setAdapter(getStopAdapter());
-//        viewpager.setPageMargin(getResources().getDisplayMetrics().widthPixels / -9);
-//        viewpager.setOffscreenPageLimit(2);
-
 
 
 //        JSONArray source = getIntent().get
@@ -156,8 +135,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
 
         stopArrivalProgress.setVisibility(View.GONE);
-
-        listViewStop.requestFocus();
 
         textStopTitle.setTypeface(fontOldBaths);
         editBusSearch.setTypeface(fontOldBaths);
@@ -196,138 +173,8 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 //            e.printStackTrace();
         }
 
-        adapterStop = new JSONArrayAdapterItem(this){
-            @Override
-            public ViewProjector createObject() {
-                return new BusStopItem(context);
-            }
-            class BusStopItem extends FrameLayout implements ViewProjector{
-                TextView text1;
-                TextView text2;
-                TextView text3;
 
-                public BusStopItem(Context context){
-                    super(context);
-                    ViewGroup view = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.listitem_stop,null);
-                    text1 = (TextView) view.findViewById(R.id.textView1);
-                    text2 = (TextView) view.findViewById(R.id.textView2);
-                    text3 = (TextView) view.findViewById(R.id.textView3);
-                    addView(view);
-                }
-                @Override
-                public void projectile(JSONObject item) {
-                    text1.setText(item.optString("name"));
-                    text2.setText(item.optString("arsId"));
-                    text3.setText(
-                            String.format("%2.2fm", item.optDouble("distance"))
-                    );
-                }
-            }
-
-            @Override
-            public void notifyDataSetChanged() {
-                super.notifyDataSetChanged();
-                View emptyView = findViewById(R.id.stopEmptyView);
-                boolean exists = adapterStop.getCount() > 0;
-                emptyView.setVisibility(exists ? View.GONE : View.VISIBLE);
-
-                JSONArray stopList = adapterStop.getDataSource();
-                try {
-                    System.out.println(stopList.toString(4));
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-
-//                JSONArray buslist = adapter.getDataSource();
-
-
-                if(stopList!=null && stopList.length()>0
-                    && (adapter== null || adapter.getCount()==0)
-                        //&& buslist==null
-                        ){
-                    JSONObject item = (JSONObject) adapterStop.getItem(0);
-                    int arsId = item.optInt("arsId");
-                    onSearchStop(arsId);
-                    editBusSearch.setText(String.valueOf(arsId));
-                    textStopTitle.setText(item.optString("name"));
-                }
-            }
-        };
-
-        adapterStop.setDataSource(source);
-        listViewStop.setAdapter(adapterStop);
-        listViewStop.setOnItemClickListener(this);
-
-
-        adapter = new JSONArrayAdapterItem(this){
-            @Override
-            public ViewProjector createObject() {
-                return new BusStopInfo(context);
-            }
-
-            class BusStopInfo extends FrameLayout implements ViewProjector {
-                TextView text1;
-                TextView text2;
-                TextView text3;
-                ImageView imgEndBus;
-
-                public BusStopInfo(Context context) {
-                    super(context);
-                    ViewGroup view = (ViewGroup) LayoutInflater.from(context).inflate(R.layout.listitem_stopinfo, null);
-                    imgEndBus = (ImageView) view.findViewById(R.id.imgEndBus);
-                    text1 = (TextView) view.findViewById(R.id.textView1);
-                    text2 = (TextView) view.findViewById(R.id.textView2);
-                    text3 = (TextView) view.findViewById(R.id.textView3);
-                    text1.setTypeface(null, Typeface.BOLD);
-                    addView(view);
-                }
-
-                @Override
-                public void projectile(JSONObject item) {
-                    /*
-                    //
-                    3 간선
-                    4 지선
-                    5 순환
-                    6 광역
-                    7 8 경기, 인천
-                    default
-                    */
-
-                    int busColor = getBusColor(item.optInt("routeType"));
-                    text1.setTextColor(busColor);
-
-                    String adirection = item.optString("adirection");
-                    if(adirection.length()>0)
-                        adirection += "행";
-
-                    int isLast1 = item.optInt("isLast1");
-                    String nextBus = item.optString("nextBus");
-
-                    text1.setText(item.optString("rtNm"));
-                    if(isLast1==1)
-                        imgEndBus.setVisibility(View.VISIBLE);
-                    else
-                        imgEndBus.setVisibility(View.GONE);
-//                    String prefix = String.format("[%d %s]", isLast1, nextBus);
-
-                    text2.setText(
-//                            prefix +
-                            item.optString("arrmsg1") );
-                    text3.setText(adirection);
-
-
-
-//                    text3.setText(item.optInt("traTime1") + " " );//+ item.optInt());
-//                    text3.setText(
-//                            String.format("%2.2fm", item.optDouble("distance"))
-//                    );
-                }
-            }
-        };
-        listViewInfo.setAdapter(adapter);
-
-        adapter2 = new RecyclerView.Adapter() {
+        adapter = new RecyclerView.Adapter() {
             @Override
             public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
@@ -372,6 +219,11 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 //                            prefix +
                             item.optString("arrmsg1"));
                     h.text3.setText(adirection);
+//                    text1.setText(item.optString("name"));
+//                    text2.setText(item.optString("arsId"));
+//                    text3.setText(
+//                            String.format("%2.2fm", item.optDouble("distance"))
+//                    );
                 }
 
             }
@@ -383,8 +235,8 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
 
         };
-        listViewInfo.setVisibility(View.GONE);
-        recyclerView.setAdapter(adapter2);
+//        listViewInfo.setVisibility(View.GONE);
+        recyclerView.setAdapter(adapter);
 
     }
 
@@ -427,7 +279,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
             text1.setTypeface(null, Typeface.BOLD);
         }
     }
-
 
     private void showSplash() {
         findViewById(R.id.appBarLayout).setVisibility(View.GONE);
@@ -489,20 +340,19 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
         return 0xff000000 | color;
     }
 
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        JSONObject json = (JSONObject) adapterStop.getItem(position);
-//        Intent intent = new Intent(this, StopInfoActivity.class);
-//        intent.putExtra("info", json.toString());
-//        startActivity(intent);
-        int arsId = json.optInt("arsId");
-
-        editBusSearch.setText(String.valueOf(arsId));
-        textStopTitle.setText(json.optString("name"));
-
-        onSearchStop(arsId);
-    }
+//    @Override
+//    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//        JSONObject json = (JSONObject) adapterStop.getItem(position);
+////        Intent intent = new Intent(this, StopInfoActivity.class);
+////        intent.putExtra("info", json.toString());
+////        startActivity(intent);
+//        int arsId = json.optInt("arsId");
+//
+//        editBusSearch.setText(String.valueOf(arsId));
+//        textStopTitle.setText(json.optString("name"));
+//
+//        onSearchStop(arsId);
+//    }
 
     public void onSearchStop(int stopid){
         this.busStopId = stopid;
@@ -523,10 +373,9 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                 @Override
                 protected void onPreExecute() {
                     super.onPreExecute();
-//                    Toast.makeText(context, "reload ", Toast.LENGTH_SHORT).show();
 
                     if(adapter!=null) {
-                        adapter.setDataSource(new JSONArray());
+                        resultList = new JSONArray();
                         adapter.notifyDataSetChanged();
                     }
 
@@ -600,7 +449,6 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
                     stopArrivalEmptyView.setVisibility(View.GONE);
                     stopArrivalProgress.setVisibility(View.GONE);
-//                        Toast.makeText(context, "onPostExcute", Toast.LENGTH_SHORT).show();
                     if(response!=null ){
 //                        Log.d(TAG, response.toString());
 
@@ -667,16 +515,13 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
                             StopListActivity.this.resultList = resultListNew;
                         }
                     }
-
-                    adapter.setDataSource(resultList);
-                    adapter.notifyDataSetChanged();
+                    adapter.notifyDataSetChanged();;
                     lastLng = gpsX;
                     lastLat = gpsY;
                     prefs.edit().
                             putFloat("lastLng", lastLng).
                             putFloat("lastLat", lastLat).apply();
                     textStopTitle.setText(stNm);
-                        Toast.makeText(context, "!!!", Toast.LENGTH_SHORT).show();
                     task = null;
 
 
@@ -789,22 +634,32 @@ implements AbsListView.OnItemClickListener, BeaconService.StopListListener
 
     @Override
     public void updateStop(final JSONArray array) {
-        listViewInfo.post(new Runnable() {
-            @Override
-            public void run() {
-
-                if (array.length() > 0)
-                    adapterStop.setDataSource(array);
-            }
-        });//, 200L);
+//        listViewInfo.post(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//                if (array.length() > 0)
+//                    adapterStop.setDataSource(array);
+//            }
+//        });//, 200L);
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
-                adapter2.notifyDataSetChanged();
+                if(resultList==null|| resultList.length()==0) {
+                    resultList = array;
+                    adapter.notifyDataSetChanged();
+
+                    View emptyView = findViewById(R.id.stopEmptyView);
+                    boolean exists = array.length() > 0;
+                    emptyView.setVisibility(exists ? View.GONE : View.VISIBLE);
+                    JSONObject item = (JSONObject) array.optJSONObject(0);
+                    int arsId = item.optInt("arsId");
+                    onSearchStop(arsId);
+                    editBusSearch.setText(String.valueOf(arsId));
+                    textStopTitle.setText(item.optString("name"));
+                }
             }
         });
-
-
 
     }
 
