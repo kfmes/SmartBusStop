@@ -5,8 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-
-
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="true" />
@@ -33,8 +31,7 @@
         <service
             android:name=".BeaconService"
             android:enabled="true"
-            android:exported="false"
-            >
+            android:exported="false" >
         </service>
 
         <!-- android:label="@string/title_activity_stop_list" -->
@@ -45,15 +42,13 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden" >
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!--
-        -->
+<!--   -->
         <!--
         <activity
             android:name=".IntroActivity"
@@ -71,6 +66,10 @@
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps"
             android:parentActivityName=".StopListActivity" >
+        </activity>
+        <activity
+            android:theme="@style/AppTheme.Popup"
+            android:name=".StopSelectActivity" >
         </activity>
     </application>
 

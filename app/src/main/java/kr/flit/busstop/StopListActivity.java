@@ -678,6 +678,8 @@ implements BeaconService.StopListListener
 
     }
     public void onClickMoreStop(View v){
+        Intent intent = new Intent(this, StopSelectActivity.class);
+        startActivity(intent);
 
     }
 
