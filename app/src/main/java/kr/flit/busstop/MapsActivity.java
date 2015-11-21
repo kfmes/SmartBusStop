@@ -206,7 +206,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 .title(stop.getName())
                                 .snippet(stop.getArsId())
                                 .visible(true)
-                                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher))
+//                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker))
+//                                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_place_grey600_36dp))
                                 ;
                         Marker m = mMap.addMarker(marker);
                     }

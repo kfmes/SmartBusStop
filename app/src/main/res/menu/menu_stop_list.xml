@@ -2,7 +2,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.flit.busstop.StopListActivity">
+
+
+    <item android:id="@+id/action_refresh" android:title="@string/title_activity_maps"
+          android:icon="@drawable/ic_refresh"
+          android:orderInCategory="100" app:showAsAction="always" />
+
     <item android:id="@+id/action_maps" android:title="@string/title_activity_maps"
-          android:icon="@drawable/ic_place_white_36dp"
+          android:icon="@drawable/ic_place"
         android:orderInCategory="100" app:showAsAction="always" />
 </menu>
