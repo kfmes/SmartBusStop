@@ -2,6 +2,9 @@ package kr.flit.busstop;
 
 import android.app.Application;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.location.Location;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.altbeacon.beacon.BeaconManager;
@@ -11,6 +14,9 @@ import org.altbeacon.beacon.Region;
 import org.altbeacon.beacon.powersave.BackgroundPowerSaver;
 import org.altbeacon.beacon.startup.BootstrapNotifier;
 import org.altbeacon.beacon.startup.RegionBootstrap;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by kfmes on 15. 5. 24..
@@ -29,6 +35,10 @@ implements BootstrapNotifier {
 
     private long scanPeriodDefault = 10000;
     private long betweenScanPeriodDefault =  5 * 60 * 1000;
+    private static BusStopApplication app;
+    private List<BusStop> gpsStop;
+    private List<BusStop> beaconStop;
+    private Location lastLocation;
 
 //        beaconManager.setBackgroundScanPeriod(5000L);
 //        beaconManager.setBackgroundBetweenScanPeriod(5000L);
@@ -83,10 +93,15 @@ implements BootstrapNotifier {
 
     public void onCreate() {
         super.onCreate();
+        app = this;
+        gpsStop = new ArrayList<>();
+        beaconStop = new ArrayList<>();
+
         Log.d(TAG, "onCreate Begin");
         init();
         Log.d(TAG, "onCreate End");
     }
+
 
     @Override
     public void didEnterRegion(Region region) {
@@ -127,5 +142,47 @@ implements BootstrapNotifier {
         Log.i(TAG, "==didDetermineStateForRegion" + state + " " + region);
     }
 
+    public static BusStopApplication getApp() {
+        return app;
+    }
+    public void setGpsStop(List<BusStop> busStop) {
+        this.gpsStop = busStop;
+    }
+    public void setBeaconStop(List<BusStop> busStop){
+        this.beaconStop = busStop;
+    }
 
+    public List<BusStop> getBusStop(){
+        ArrayList<BusStop> stops = new ArrayList<>(beaconStop);
+        stops.addAll(gpsStop);
+        return stops;
+    }
+
+
+    public void updateLastLocation(Location lastLocation) {
+        this.lastLocation = lastLocation;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit()
+                .putString("lastProvider", lastLocation.getProvider())
+                .putFloat("lastLat", (float) lastLocation.getLatitude())
+                .putFloat("lastLng", (float) lastLocation.getLongitude())
+                .apply();
+    }
+
+    public Location getLastLocation() {
+        if(lastLocation==null ){
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            if(prefs.contains("lastProvider")){
+                String provider = prefs.getString("lastProvider","");
+                double lastLat = prefs.getFloat("lastLat", 0);
+                double lastLng = prefs.getFloat("lastLng", 0);
+
+                Location location = new Location(provider);
+                location.setLatitude(lastLat);
+                location.setLongitude(lastLng);
+                this.lastLocation = location;
+            }
+        }
+        return lastLocation;
+    }
 }

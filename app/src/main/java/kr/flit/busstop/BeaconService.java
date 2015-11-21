@@ -42,6 +42,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BeaconService extends Service
@@ -287,7 +288,9 @@ public class BeaconService extends Service
 
     private void sendNotification() {
         Log.d(TAG, "sendNotification");
+
         JSONArray stationList = new JSONArray();
+        List<BusStop> stops = new ArrayList<>();
 
         for(Beacon beacon : list){
             int busStopId = beacon.getId2().toInt() << 8;// * 0x100;
@@ -295,6 +298,7 @@ public class BeaconService extends Service
             final String sBusStopId = String.valueOf(busStopId);
 
             JSONObject stopObj = stationMap.get(busStopId);
+            BusStop stop = new BusStop();
             if(stopObj==null){
                 stopObj = new JSONObject();
                 try {
@@ -303,14 +307,20 @@ public class BeaconService extends Service
                     e.printStackTrace();
                 }
             }
+            stop.setArsId(sBusStopId);
+            stop.setIsBeacon(true);
+            stop.setDistance(beacon.getDistance());
 
+            stop.setArsId(sBusStopId);
             try {
+                stop.setName(prefsStation.getString(sBusStopId, ""));
                 stopObj.put("name", prefsStation.getString(sBusStopId, ""));
                 stopObj.put("distance", beacon.getDistance());
                 stationList.put(stopObj);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            stops.add(stop);
         }
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -380,6 +390,9 @@ public class BeaconService extends Service
 
         if(StopListActivity.instance!=null){
             StopListActivity.instance.updateStop(stationList);
+        }
+        if(BusStopApplication.getApp()!=null){
+            BusStopApplication.getApp().setBeaconStop(stops);
         }
     }
 }

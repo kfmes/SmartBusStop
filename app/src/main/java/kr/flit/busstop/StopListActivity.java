@@ -1,13 +1,12 @@
 package kr.flit.busstop;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -34,6 +33,10 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -45,18 +48,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
 
 public class StopListActivity extends AppCompatActivity
-implements BeaconService.StopListListener
-{
+implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 10;
     private static final int REQUEST_PERMISSION_SETTING = 11;
     private static final int REQUEST_MAPS = 20;
+    private static final int REQUSET_STOP_SELECT = 30;
     private AsyncTask<Void, Void, JSONObject> task;
     private JSONArray resultList ;
 
@@ -84,7 +88,11 @@ implements BeaconService.StopListListener
 
     float lastLat ;
     float lastLng ;
+    Location curLocation;
+
     private SharedPreferences prefs;
+    private GoogleApiClient googleApiClient;
+    private Location lastLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -238,7 +246,7 @@ implements BeaconService.StopListListener
         };
 //        listViewInfo.setVisibility(View.GONE);
         recyclerView.setAdapter(adapter);
-
+        buildGoogleApiClient();
     }
 
 
@@ -259,6 +267,109 @@ implements BeaconService.StopListListener
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+
+        Log.d(TAG,"onConnected " + bundle );
+        Log.d(TAG,"onConnected " + bundle );
+        Log.d(TAG,"onConnected " + bundle );
+        Log.d(TAG,"onConnected " + bundle );
+
+        lastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                googleApiClient);
+        if (lastLocation != null) {
+            Log.d(TAG, "location : " + lastLocation.getLatitude() + " " + lastLocation.getLongitude());
+            updateLastGpsStop();
+        }
+
+    }
+
+    private void updateLastGpsStop() {
+
+        String url = "http://m.bus.go.kr/mBus/bus/getStationByPos.bms";
+        /*
+        tmX:126.97796919999999
+        tmY:37.566535
+        radius:300
+         */
+        BusStopApplication.getApp().updateLastLocation(lastLocation);
+        OkHttpClient client = new OkHttpClient();
+        String tmX = String.valueOf(lastLocation.getLongitude());
+        String tmY = String.valueOf(lastLocation.getLatitude());
+        String radius = "200";
+        Log.d(TAG, "x, y : " + tmX + "," +tmY );
+
+        RequestBody body = new FormEncodingBuilder()
+                .add("tmX", tmX)
+                .add("tmY", tmY)
+                .add("radius", radius)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                try {
+                    if (response.isSuccessful()) {
+                        String res = response.body().string();
+                        Log.d(TAG, "station by pos : " + res);
+                        JSONObject json = new JSONObject(res);
+
+
+                        JSONArray resultList = json.optJSONArray("resultList");
+                        ArrayList<BusStop> newList = new ArrayList<BusStop>();
+
+                        if (resultList != null && resultList.length() > 0) {
+
+                            for (int i = 0; i < resultList.length(); i++) {
+                                JSONObject stopObj = resultList.optJSONObject(i);
+                                BusStop stop = new BusStop();
+                                stop.setIsBeacon(false);
+
+                                double gpsx = stopObj.optDouble("gpsX");
+                                double gpsy = stopObj.optDouble("gpsY");
+                                String arsId = stopObj.optString("arsId");
+                                stop.setName(stopObj.optString("stationNm"));
+                                stop.setArsId(arsId);
+                                stop.setLatLng(gpsy, gpsx);
+                                Location loc = new Location("busstop");
+                                loc.setLongitude(gpsx);
+                                loc.setLatitude(gpsy);
+
+                                stop.setDistance(lastLocation.distanceTo(loc));
+                                newList.add(stop);
+                            }
+                        }
+                        BusStopApplication.getApp().setGpsStop(newList);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    ;
+                }
+
+            }
+        });
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.d(TAG, "onConnectionFailed " + connectionResult);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
@@ -524,6 +635,12 @@ implements BeaconService.StopListListener
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         instance = null;
@@ -536,7 +653,17 @@ implements BeaconService.StopListListener
         checkAppPermission();
         BeaconManager manager = BeaconManager.getInstanceForApplication(getApplicationContext());
         manager.setBackgroundMode(false);
+        updateLocation();
 
+    }
+
+    @Override
+    protected void onStop() {
+        googleApiClient.disconnect();
+        super.onStop();
+    }
+
+    private void updateLocation() {
     }
 
     @Override
@@ -575,10 +702,10 @@ implements BeaconService.StopListListener
                     REQUEST_CODE_ASK_PERMISSIONS);
 
             return;
-
-
         }
     }
+
+
     private void requestLocationPermission(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{
@@ -614,20 +741,15 @@ implements BeaconService.StopListListener
         }else if(requestCode==REQUEST_MAPS && data!=null){
             BusStop stop = (BusStop) data.getSerializableExtra("busstop");
             updateStop(stop);
-
-        }else {
+        }else if(requestCode==REQUSET_STOP_SELECT && data!=null){
+            BusStop stop = (BusStop) data.getSerializableExtra("busstop");
+            updateStop(stop);
+        }
+        else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
-        new AlertDialog.Builder(this)
-                .setMessage(message)
-                .setPositiveButton(android.R.string.ok, okListener)
-                .setNegativeButton(android.R.string.cancel, null)
-                .create()
-                .show();
-    }
 
     private void updateStop(BusStop stop) {
         resultList = new JSONArray(); // to force refresh
@@ -642,7 +764,7 @@ implements BeaconService.StopListListener
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
-                if(resultList==null|| resultList.length()==0) {
+                if (resultList == null || resultList.length() == 0) {
                     resultList = array;
                     adapter.notifyDataSetChanged();
 
@@ -673,9 +795,21 @@ implements BeaconService.StopListListener
     }
 
     public void onClickMoreStop(View v){
-        Intent intent = new Intent(this, StopSelectActivity.class);
-        startActivity(intent);
 
+        Intent intent = new Intent(this, StopSelectActivity.class);
+        startActivityForResult(intent,REQUSET_STOP_SELECT);
+        overridePendingTransition(0,0);
+
+    }
+
+
+    protected synchronized void buildGoogleApiClient() {
+        Log.d(TAG, "buildGoogleApiClient");
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
     }
 
 }
