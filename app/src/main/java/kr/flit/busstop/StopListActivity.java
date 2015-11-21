@@ -254,11 +254,7 @@ implements BeaconService.StopListListener
         int id = item.getItemId();
 
         if (id == R.id.action_maps) {
-            Intent intent = new Intent(this, MapsActivity.class);
-            intent.putExtra("lat", lastLat);
-            intent.putExtra("lng", lastLng);
-
-            startActivityForResult(intent, REQUEST_MAPS);
+            onClickMap(null);
             return true;
         }
 
@@ -642,14 +638,7 @@ implements BeaconService.StopListListener
 
     @Override
     public void updateStop(final JSONArray array) {
-//        listViewInfo.post(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//                if (array.length() > 0)
-//                    adapterStop.setDataSource(array);
-//            }
-//        });//, 200L);
+
         recyclerView.post(new Runnable() {
             @Override
             public void run() {
@@ -672,11 +661,17 @@ implements BeaconService.StopListListener
     }
 
     public void onClickMap(View v){
+        Intent intent = new Intent(this, MapsActivity.class);
+        intent.putExtra("lat", lastLat);
+        intent.putExtra("lng", lastLng);
+
+        startActivityForResult(intent, REQUEST_MAPS);
     }
 
     public void onClickMessage(View v){
 
     }
+
     public void onClickMoreStop(View v){
         Intent intent = new Intent(this, StopSelectActivity.class);
         startActivity(intent);
