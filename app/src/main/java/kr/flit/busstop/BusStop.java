@@ -1,5 +1,7 @@
 package kr.flit.busstop;
 
+import android.location.Location;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -8,11 +10,14 @@ import java.io.Serializable;
 /**
  * Created by kfmes on 15. 11. 17..
  */
-public class BusStop implements Serializable{
+public class BusStop implements Serializable, Comparable<BusStop>{
     private String arsId;
     private String name;
     private double lat;
     private double lng;
+    private boolean isBeacon = false;
+    private transient Location location;
+    private double distance;
 
     @Override
     public boolean equals(Object o) {
@@ -46,12 +51,21 @@ public class BusStop implements Serializable{
         }
     }
 
-//    public Location getLocation() {
-//        Location location = new Location("busstop");
-//        location.setLatitude(lat);
-//        location.setLongitude(lng);
-//        return location;
-//    }
+    public void setIsBeacon(boolean isBeacon) {
+        this.isBeacon = isBeacon;
+    }
+
+    public boolean isBeacon() {
+        return isBeacon;
+    }
+
+        public Location getLocation() {
+        Location location = new Location("busstop");
+        location.setLatitude(lat);
+        location.setLongitude(lng);
+        this.location = location;
+        return location;
+    }
 
     public void setLatLng(double lat, double lng){
         this.lat = lat;
@@ -83,5 +97,19 @@ public class BusStop implements Serializable{
     }
     public double getLng() {
         return lng;
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
+    public double getDistance() {
+        return distance;
+    }
+
+
+    @Override
+    public int compareTo(BusStop another) {
+        return (int) (getDistance()-another.getDistance());
     }
 }
