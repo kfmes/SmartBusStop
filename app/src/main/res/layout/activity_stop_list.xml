@@ -69,10 +69,10 @@ app:layout_scrollFlags="scroll|enterAlways"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/splash"
-        android:background="@color/colorAccent"
-
+        android:background="#29268A"
         >
         <!--
+        android:background="@color/colorAccent"
         android:background="#4C348A"
         android:background="@color/colorAccent"
         -->
