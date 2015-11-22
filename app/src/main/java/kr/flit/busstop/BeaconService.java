@@ -144,6 +144,9 @@ public class BeaconService extends Service
             }
             if(id1hex.equals("ff00"))
                 list.add(beacon);
+
+            if(id1hex.equals("ff01"))
+                list.add(beacon);
         }
 
         JSONArray array = new JSONArray();
@@ -167,7 +170,7 @@ public class BeaconService extends Service
             Beacon beacon = it.next();
 //            String id1uid = "FF10".toLowerCase();
 //            Log.d(TAG, beacon.getId1().toUuidString());
-            String id1hex = beacon.getId1().toUuidString().toLowerCase();
+            String id1hex = beacon.getId1().toUuid().toString().toLowerCase();
 //            if (id1hex.length() > 8) {
 //                id1hex = id1hex.substring(4, 8);
 //            }
@@ -309,6 +312,20 @@ public class BeaconService extends Service
             }
             stop.setArsId(sBusStopId);
             stop.setIsBeacon(true);
+
+            String id1hex = beacon.getId1().toUuidString().toLowerCase();
+            if (id1hex.length() > 8) {
+                id1hex = id1hex.substring(4, 8);
+            }
+            if(id1hex.equals("ff01")) {
+                BusStopApplication.getApp().addMessageRecvStop(sBusStopId);
+            }
+            Log.d(TAG, "can recv msg" + id1hex);
+            Log.d(TAG, "can recv msg" + id1hex);
+            Log.d(TAG, "can recv msg" + id1hex);
+            Log.d(TAG, "can recv msg" + id1hex);
+            Log.d(TAG, "can recv msg" + id1hex);
+
             stop.setDistance(beacon.getDistance());
 
             stop.setArsId(sBusStopId);

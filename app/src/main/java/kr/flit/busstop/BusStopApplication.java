@@ -16,7 +16,9 @@ import org.altbeacon.beacon.startup.BootstrapNotifier;
 import org.altbeacon.beacon.startup.RegionBootstrap;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by kfmes on 15. 5. 24..
@@ -39,6 +41,7 @@ implements BootstrapNotifier {
     private List<BusStop> gpsStop;
     private List<BusStop> beaconStop;
     private Location lastLocation;
+    private Set<String> canMessageRecvStop = new HashSet<>();
 
 //        beaconManager.setBackgroundScanPeriod(5000L);
 //        beaconManager.setBackgroundBetweenScanPeriod(5000L);
@@ -76,10 +79,18 @@ implements BootstrapNotifier {
         String id1Str = "a495ff00-c5b1-4b44-b512-1370f02d74de";
         Identifier id1 = Identifier.parse(id1Str);
 
-        Region region = new Region("backgroundRegion",
-                id1, null, null);
+        String id2Str = "a495ff01-c5b1-4b44-b512-1370f02d74de";
+        Identifier id2 = Identifier.parse(id2Str);
+
+        Region region = new Region("backgroundRegion", id1, null, null);
+        Region region2 = new Region("backgroundRegion2", id2, null, null);
+
 //        new Region()
-        regionBootstrap = new RegionBootstrap(this, region);
+        List<Region> regions = new ArrayList<>();
+        regions.add(region);
+        regions.add(region2);
+
+        regionBootstrap = new RegionBootstrap(this, regions);
 
         // simply constructing this class and holding a reference to it in your custom Application
         // class will automatically cause the BeaconLibrary to save battery whenever the application
@@ -154,7 +165,10 @@ implements BootstrapNotifier {
 
     public List<BusStop> getBusStop(){
         ArrayList<BusStop> stops = new ArrayList<>(beaconStop);
-        stops.addAll(gpsStop);
+        for(BusStop stop : gpsStop){
+            if(stops.contains(stop)==false)
+                stops.add(stop);
+        }
         return stops;
     }
 
@@ -184,5 +198,13 @@ implements BootstrapNotifier {
             }
         }
         return lastLocation;
+    }
+
+    public boolean isMessageRecvStop(String arsId){
+        return canMessageRecvStop.contains(arsId);
+    }
+
+    public void addMessageRecvStop(String arsId) {
+        canMessageRecvStop.add(arsId);
     }
 }

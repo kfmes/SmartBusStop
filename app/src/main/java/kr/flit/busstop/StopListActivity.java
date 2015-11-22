@@ -264,6 +264,8 @@ implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, 
         if (id == R.id.action_maps) {
             onClickMap(null);
             return true;
+        }else if(id == R.id.action_refresh){
+            reload();
         }
 
         return super.onOptionsItemSelected(item);
@@ -487,10 +489,8 @@ implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, 
                         adapter.notifyDataSetChanged();
                     }
 
-
                     stopArrivalEmptyView.setVisibility(View.GONE);
                     stopArrivalProgress.setVisibility(View.VISIBLE);
-
 
 //                        btnReload.setEnabled(false);
                 }
@@ -618,6 +618,13 @@ implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, 
                             StopListActivity.this.resultList = resultListNew;
                         }
                     }
+
+                    String arsId = String.valueOf(busStopId).replaceAll("-", "");
+
+                    findViewById(R.id.btnMessage).setVisibility(
+                            BusStopApplication.getApp().isMessageRecvStop(arsId) ? View.VISIBLE : View.GONE
+                    );
+
                     adapter.notifyDataSetChanged();;
                     lastLng = gpsX;
                     lastLat = gpsY;
@@ -626,8 +633,6 @@ implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, 
                             putFloat("lastLat", lastLat).apply();
                     textStopTitle.setText(stNm);
                     task = null;
-
-
 
                 }
             };
@@ -791,14 +796,17 @@ implements BeaconService.StopListListener, GoogleApiClient.ConnectionCallbacks, 
     }
 
     public void onClickMessage(View v){
-
+        Intent intent = new Intent(this, SendMessageActivity.class);
+//        startActivityForResult(intent,REQUSET_STOP_SELECT);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
     }
 
     public void onClickMoreStop(View v){
 
         Intent intent = new Intent(this, StopSelectActivity.class);
         startActivityForResult(intent,REQUSET_STOP_SELECT);
-        overridePendingTransition(0,0);
+        overridePendingTransition(0, 0);
 
     }
 

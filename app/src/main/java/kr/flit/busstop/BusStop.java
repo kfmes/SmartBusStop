@@ -17,7 +17,6 @@ public class BusStop implements Serializable, Comparable<BusStop>{
     private double lng;
     private boolean isBeacon = false;
     private transient Location location;
-    private boolean canRecvMsg;
     private double distance;
 
     @Override
@@ -76,15 +75,6 @@ public class BusStop implements Serializable, Comparable<BusStop>{
 //        this.lat = location.getLatitude();
 //        this.lng = location.getLongitude();
 //    }
-
-
-    public void setCanRecvMsg(boolean canRecvMsg) {
-        this.canRecvMsg = canRecvMsg;
-    }
-
-    public boolean isCanRecvMsg() {
-        return canRecvMsg;
-    }
 
     public String getArsId() {
         return arsId;
